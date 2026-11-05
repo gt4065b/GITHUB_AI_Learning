@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Orange3 지도학습 강의실</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+/* Layout: 위젯 캔버스 느낌의 모눈 배경 위에, 왼쪽 커리큘럼 + 오른쪽 강의 패널 */
+:root{
+  --bg:#f6f4f1; --grid:#e7e2db; --panel:#ffffff; --ink:#1f1c19; --muted:#6c645c;
+  --line:#ddd6cd; --accent:#e8700f; --accent-ink:#ffffff; --accent-soft:#fdecdc;
+  --link:#3b6fb6; --good:#2f8a55; --good-soft:#e2f3e8; --bad:#c2412d; --bad-soft:#fbe5e1;
+  --f-display:"Do Hyeon","IBM Plex Sans KR",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#171513; --grid:#221f1c; --panel:#211e1b; --ink:#f1ece6; --muted:#a89f95;
+  --line:#3a3530; --accent:#f58a2e; --accent-ink:#1b1209; --accent-soft:#3a2614;
+  --link:#86aee6; --good:#5cc489; --good-soft:#1b3326; --bad:#f07a66; --bad-soft:#3b1f1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#171513; --grid:#221f1c; --panel:#211e1b; --ink:#f1ece6; --muted:#a89f95;
+  --line:#3a3530; --accent:#f58a2e; --accent-ink:#1b1209; --accent-soft:#3a2614;
+  --link:#86aee6; --good:#5cc489; --good-soft:#1b3326; --bad:#f07a66; --bad-soft:#3b1f1a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.65;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;}
+.wrap{max-width:1180px;margin:0 auto;padding-block:28px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:22px}
+a{color:var(--link)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+/* Header */
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(34px,5vw,52px);line-height:1.05;margin:4px 0 6px;text-wrap:balance}
+h1 .dot{color:var(--accent)}
+.sub{color:var(--muted);margin:0;max-width:60ch}
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 14px;min-width:92px}
+.stat b{display:block;font-family:var(--f-display);font-weight:400;font-size:24px;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .4s ease}
+
+/* Main grid */
+main{display:grid;grid-template-columns:320px minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:860px){main{grid-template-columns:minmax(0,1fr)}}
+
+/* Curriculum */
+nav.curr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 10px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:860px){nav.curr{position:static;order:2}}
+.ch{padding:8px 8px 4px;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.ch:not(:first-child){border-top:1px dashed var(--line);margin-top:6px;padding-top:12px}
+.item{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;
+  text-align:left;background:none;border:0;color:inherit;font:inherit;padding:8px;border-radius:9px;cursor:pointer}
+.item:hover{background:var(--accent-soft)}
+.item[aria-current="true"]{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.node{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;
+  font-family:var(--f-mono);font-size:11px;color:var(--muted);background:var(--panel)}
+.item.done .node{border-color:var(--good);background:var(--good);color:var(--panel)}
+.item[aria-current="true"] .node{border-color:var(--accent);color:var(--accent)}
+.item.done[aria-current="true"] .node{color:var(--panel)}
+.item .t{font-size:14px;line-height:1.35;min-width:0}
+.item .d{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* Lesson */
+article{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:0}
+.player{position:relative;aspect-ratio:16/9;max-width:100%;background:#000;display:block}
+.player img{width:100%;height:100%;object-fit:cover;display:block;opacity:.85;transition:opacity .2s}
+.player iframe{width:100%;height:100%;border:0;display:block}
+a.player:hover img{opacity:1}
+.play{position:absolute;inset:0;display:grid;place-items:center;text-decoration:none}
+.play span{display:flex;align-items:center;gap:10px;background:var(--accent);color:var(--accent-ink);font-weight:700;
+  padding:12px 20px;border-radius:99px;box-shadow:0 6px 24px rgba(0,0,0,.35);font-size:15px}
+.play svg{width:18px;height:18px;fill:currentColor}
+.body{padding:22px clamp(16px,3vw,30px) 26px;display:flex;flex-direction:column;gap:20px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.tag{background:var(--accent-soft);color:var(--accent);padding:2px 9px;border-radius:99px}
+h2{font-family:var(--f-display);font-weight:400;font-size:clamp(26px,3.4vw,34px);line-height:1.15;margin:0;text-wrap:balance}
+h3{font-size:13px;letter-spacing:.06em;color:var(--muted);margin:0 0 8px;font-weight:700}
+.lead{margin:0;font-size:16px;max-width:65ch}
+ul.points{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px;max-width:65ch}
+ul.points b{color:var(--accent)}
+.widgets{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.w{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);border-radius:22px;padding:4px 12px 4px 6px;font-size:13.5px;background:var(--bg)}
+.w::before{content:"";width:16px;height:16px;border-radius:50%;background:var(--accent);opacity:.85}
+.arrow{color:var(--muted);font-family:var(--f-mono)}
+
+/* Quiz */
+.quiz{border:1.5px dashed var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.quiz p{margin:0;font-weight:500}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;font:inherit;color:inherit;background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt:disabled{cursor:default}
+.fb{font-size:14px;margin:0;min-height:1.4em}
+.fb.ok{color:var(--good)} .fb.no{color:var(--bad)}
+
+/* Footer controls */
+.ctrl{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:18px}
+.btn{font:inherit;font-weight:500;border-radius:10px;padding:9px 16px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.done{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+.nav2{display:flex;gap:8px}
+.foot{font-size:12.5px;color:var(--muted);text-align:center}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <div class="eyebrow">YouTube 재생목록 · 생활코딩</div>
+    <h1>Orange3 지도학습<span class="dot">.</span></h1>
+    <p class="sub">코딩 없이 위젯을 선으로 이어 머신러닝 모델을 만들고, 경쟁시키고, 공정하게 평가하는 법을 배웁니다.</p>
+  </div>
+  <div class="stats">
+    <div class="stat"><b id="sCount">10</b><span>강의</span></div>
+    <div class="stat"><b id="sTime">-</b><span>총 재생시간</span></div>
+    <div class="stat" style="min-width:140px"><b id="sProg">0%</b><span>내 진도 · 퀴즈 <span id="sQuiz">0</span>/10</span><div class="bar"><i id="pBar"></i></div></div>
+  </div>
+</header>
+
+<main>
+  <nav class="curr" id="curr" aria-label="커리큘럼"></nav>
+  <article id="lesson" aria-live="polite"></article>
+</main>
+
+<p class="foot">강의 영상: 생활코딩 「Orange3 지도학습」 재생목록 (<a href="https://www.youtube.com/playlist?list=PLuHgQVnccGMCIA_MXFcS-IWrqKnx62Iwp" target="_blank" rel="noopener">YouTube에서 열기</a>) · 학습 노트와 퀴즈는 강의 흐름을 바탕으로 정리한 요약입니다. 진도는 이 브라우저에만 저장됩니다.</p>
+</div>
+
+<script>
+const EMBED = true;
+const THUMBS = {};
+const PL = "PLuHgQVnccGMCIA_MXFcS-IWrqKnx62Iwp";
+const CHAPTERS = {1:"시작하기",2:"지도학습의 기본",3:"회귀 · 현실 데이터로",4:"분류 문제",5:"마무리"};
+const L = [
+ {id:"tDeN1SdSqe8",no:"1",ch:1,len:"6:33",title:"수업소개",
+  lead:"기계에게 '원인'과 '결과' 데이터를 주고 스스로 규칙을 찾게 하는 것, 그것이 지도학습입니다. 이 수업에서 무엇을 배우고 왜 Orange3를 쓰는지 소개합니다.",
+  points:["<b>지도학습</b>: 정답(결과)이 붙어 있는 데이터로 학습해, 새 원인이 주어졌을 때 결과를 예측합니다.","<b>Orange3</b>: 위젯을 선으로 연결하는 비주얼 프로그래밍 도구라 코딩 없이 머신러닝을 실습할 수 있습니다.","수업 흐름: 기본 방법 → 회귀(숫자 예측) → 모델 평가 → 분류(범주 예측)."],
+  widgets:["Orange3 설치","캔버스","위젯"],
+  q:{t:"지도학습에 꼭 필요한 데이터는?",o:["결과(정답)가 함께 있는 데이터","결과가 없는 데이터만","이미지 데이터만"],a:0,e:"지도학습은 원인과 결과(정답)가 짝지어진 데이터로 학습합니다."}},
+ {id:"4uT8dMcfUD8",no:"2",ch:2,len:"8:37",title:"지도학습의 기본방법",
+  lead:"온도(원인)와 판매량(결과) 표를 학습시켜 '모델'을 만들고, 새로운 온도를 넣어 판매량을 예측해 봅니다.",
+  points:["<b>독립변수</b>(원인, 예: 온도)와 <b>종속변수</b>(결과, 예: 판매량)를 구분합니다.","학습(Learner) 위젯이 데이터를 받아 <b>모델</b>을 만듭니다.","모델에 새 독립변수를 넣으면 종속변수를 예측합니다. 예: 15℃ → 판매량 30."],
+  widgets:["File","Select Columns","Linear Regression","Predictions"],
+  q:{t:"'온도로 판매량을 예측'할 때 종속변수는?",o:["온도","판매량","날짜"],a:1,e:"예측하려는 결과가 종속변수(Target)입니다."}},
+ {id:"R5kZle15Cfg",no:"3.1",ch:3,len:"4:50",title:"보다 현실적인 사례",
+  lead:"독립변수가 여러 개인, 실제에 가까운 데이터로 같은 과정을 반복합니다.",
+  points:["현실 데이터는 결과에 영향을 주는 원인(열)이 여러 개입니다.","Data Table로 데이터를 먼저 살펴보고, 무엇이 Target인지 정합니다.","흐름은 그대로: 데이터 → 학습 → 모델 → 예측."],
+  widgets:["Datasets","Data Table","Select Columns","Linear Regression"],
+  q:{t:"독립변수가 여러 개면 지도학습 흐름은?",o:["완전히 달라진다","데이터 → 학습 → 모델 → 예측으로 같다","예측이 불가능하다"],a:1,e:"변수 개수와 상관없이 기본 흐름은 같습니다."}},
+ {id:"tj1z2kwLWw4",no:"3.2",ch:3,len:"8:36",title:"경쟁시키기",
+  lead:"하나의 데이터에 여러 학습 알고리즘을 연결해 서로 경쟁시킵니다. 어떤 알고리즘이 가장 좋은지는 데이터마다 다릅니다.",
+  points:["같은 데이터를 여러 Learner 위젯에 동시에 연결할 수 있습니다.","회귀 알고리즘 예: <b>Linear Regression, kNN, Tree, Random Forest</b>.","Predictions 위젯에서 알고리즘별 예측값을 나란히 비교합니다."],
+  widgets:["Linear Regression","kNN","Tree","Random Forest","Predictions"],
+  q:{t:"여러 알고리즘을 경쟁시키는 이유는?",o:["항상 같은 결과가 나와서","데이터마다 잘 맞는 알고리즘이 달라서","속도가 빨라져서"],a:1,e:"정답 알고리즘은 없고, 데이터에 맞는 것을 골라야 합니다."}},
+ {id:"PCIliAelLqA",no:"3.3",ch:3,len:"6:37",title:"평가하기",
+  lead:"'느낌'이 아니라 숫자로 모델의 성능을 비교합니다. Test and Score 위젯이 점수표를 만들어 줍니다.",
+  points:["<b>오차</b> = 실제값 − 예측값. 오차가 작을수록 좋은 모델입니다.","대표 지표: <b>MSE·RMSE·MAE</b>(낮을수록 좋음), <b>R²</b>(1에 가까울수록 좋음).","점수표로 어떤 알고리즘이 1등인지 한눈에 확인합니다."],
+  widgets:["Test and Score"],
+  q:{t:"회귀 모델 평가에서 R² 값은?",o:["0에 가까울수록 좋다","1에 가까울수록 좋다","음수일수록 좋다"],a:1,e:"R²는 1에 가까울수록 데이터를 잘 설명합니다."}},
+ {id:"tB7VDiH14YQ",no:"3.4",ch:3,len:"8:01",title:"공정하게 평가하기",
+  lead:"공부한 문제로 시험을 보면 점수가 부풀려집니다. 학습용과 시험용 데이터를 나눠 공정하게 평가합니다.",
+  points:["학습에 쓴 데이터로 평가하면 실제보다 좋게 나옵니다(과적합을 놓침).","<b>Data Sampler</b>로 학습 데이터와 테스트 데이터를 나눕니다.","Test and Score의 <b>Test on test data</b> 또는 <b>교차검증</b>으로 공정하게 채점합니다."],
+  widgets:["Data Sampler","Test and Score"],
+  q:{t:"공정한 평가를 위해 해야 할 일은?",o:["학습 데이터로 다시 테스트","학습용과 테스트용 데이터를 나누기","데이터를 더 적게 쓰기"],a:1,e:"모델이 보지 못한 데이터로 시험해야 실력을 알 수 있습니다."}},
+ {id:"4vNlEg8PH2c",no:"4.1",ch:4,len:"3:41",title:"분류문제 소개",
+  lead:"지금까지는 숫자를 맞히는 '회귀'였다면, 이제는 정해진 범주 중 하나를 고르는 '분류'입니다.",
+  points:["<b>회귀</b>: 결과가 숫자 (판매량, 집값).","<b>분류</b>: 결과가 범주 (합격/불합격, 꽃의 품종).","지도학습의 흐름은 같고, 알고리즘과 평가 지표가 달라집니다."],
+  widgets:["Datasets","Data Table"],
+  q:{t:"다음 중 '분류' 문제는?",o:["내일 기온 예측","이메일이 스팸인지 아닌지 판단","아파트 가격 예측"],a:1,e:"스팸/정상처럼 범주를 고르는 것이 분류입니다."}},
+ {id:"X7DmpXkqkG0",no:"4.2",ch:4,len:"6:54",title:"분류학습방법선발전",
+  lead:"분류용 학습 알고리즘을 한자리에 모아 선발전을 엽니다.",
+  points:["분류 알고리즘 예: <b>Logistic Regression, kNN, Tree, Random Forest, SVM, Naive Bayes</b>.","같은 데이터를 여러 분류기에 연결해 결과를 비교합니다.","분류에서도 '데이터에 가장 잘 맞는 선수'를 찾는 것이 목표입니다."],
+  widgets:["Logistic Regression","kNN","Tree","Random Forest","SVM","Naive Bayes"],
+  q:{t:"Logistic Regression은 주로 어떤 문제에 쓰나요?",o:["분류","회귀만","데이터 시각화"],a:0,e:"이름에 Regression이 있지만 분류 알고리즘입니다."}},
+ {id:"tKnxWH58QDU",no:"4.3",ch:4,len:"6:25",title:"모델비교",
+  lead:"분류 모델의 성적표를 읽는 법. 정확도와 혼동행렬로 어떤 모델이 어디서 틀리는지 살펴봅니다.",
+  points:["<b>CA</b>(정확도): 전체 중 맞힌 비율.","<b>AUC·F1·Precision·Recall</b>로 다른 각도에서 평가합니다.","<b>Confusion Matrix</b>로 어떤 범주를 어떤 범주로 헷갈렸는지 확인합니다."],
+  widgets:["Test and Score","Confusion Matrix"],
+  q:{t:"'어떤 범주를 무엇으로 착각했는지' 보여주는 위젯은?",o:["Data Table","Confusion Matrix","File"],a:1,e:"혼동행렬(Confusion Matrix)이 오답 패턴을 보여줍니다."}},
+ {id:"4cgJsFnopZU",no:"5",ch:5,len:"3:23",title:"수업을 마치며",
+  lead:"배운 내용을 정리하고, 다음에 공부할 방향을 안내합니다.",
+  points:["지도학습 = 정답이 있는 데이터로 학습 → 모델 → 예측.","여러 알고리즘을 경쟁시키고, 나눠서 공정하게 평가하는 습관이 핵심입니다.","다음 단계: 정답 없이 패턴을 찾는 <b>비지도학습</b>, 내 데이터로 직접 실습하기."],
+  widgets:["복습","내 데이터로 실습"],
+  q:{t:"이 수업의 핵심 습관이 아닌 것은?",o:["여러 모델 비교하기","테스트 데이터를 따로 두기","가장 먼저 만든 모델을 그대로 쓰기"],a:2,e:"비교와 공정한 평가가 핵심입니다."}}
+];
+const KEY="orange3-sl-v1";
+let st={done:{},quiz:{}};
+try{const s=JSON.parse(localStorage.getItem(KEY)||"null"); if(s) st=Object.assign(st,s);}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}};
+const sec=s=>s.split(":").reduce((a,b)=>a*60+ +b,0);
+const total=L.reduce((a,l)=>a+sec(l.len),0);
+document.getElementById("sTime").textContent=Math.floor(total/60)+"분";
+let cur=0;
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function renderNav(){
+  let h="",last=0;
+  L.forEach((l,i)=>{
+    if(l.ch!==last){h+=`<div class="ch">${l.ch}장 · ${CHAPTERS[l.ch]}</div>`;last=l.ch;}
+    h+=`<button class="item${st.done[l.id]?" done":""}" aria-current="${i===cur}" data-i="${i}">
+      <span class="node">${st.done[l.id]?"✓":l.no}</span><span class="t">${esc(l.title)}</span><span class="d">${l.len}</span></button>`;
+  });
+  const nav=document.getElementById("curr"); nav.innerHTML=h;
+  nav.querySelectorAll(".item").forEach(b=>b.onclick=()=>go(+b.dataset.i,true));
+  const d=L.filter(l=>st.done[l.id]).length, q=L.filter(l=>st.quiz[l.id]).length;
+  const p=Math.round(d/L.length*100);
+  document.getElementById("sProg").textContent=p+"%";
+  document.getElementById("pBar").style.width=p+"%";
+  document.getElementById("sQuiz").textContent=q;
+}
+
+function renderLesson(){
+  const l=L[cur], url=`https://www.youtube.com/watch?v=${l.id}&list=${PL}&index=${cur+1}`;
+  const player = EMBED
+    ? `<div class="player"><iframe src="https://www.youtube-nocookie.com/embed/${l.id}?rel=0" title="${esc(l.title)}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`
+    : `<a class="player" href="${url}" target="_blank" rel="noopener" aria-label="YouTube에서 ${esc(l.title)} 보기"><img src="${THUMBS[l.id]}" alt=""><span class="play"><span><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>YouTube에서 재생 · ${l.len}</span></span></a>`;
+  const ws=l.widgets.map(w=>`<span class="w">${esc(w)}</span>`).join('<span class="arrow">→</span>');
+  const qa=st.quiz[l.id];
+  const opts=l.q.o.map((o,i)=>`<button class="opt" data-k="${i}">${esc(o)}</button>`).join("");
+  const done=!!st.done[l.id];
+  document.getElementById("lesson").innerHTML=`${player}
+  <div class="body">
+    <div class="meta"><span class="tag">${l.ch}장 · ${CHAPTERS[l.ch]}</span><span>${l.no}강</span><span>${l.len}</span>${EMBED?`<a href="${url}" target="_blank" rel="noopener">YouTube에서 열기 ↗</a>`:""}</div>
+    <h2>${esc(l.title)}</h2>
+    <p class="lead">${l.lead}</p>
+    <section><h3>핵심 정리</h3><ul class="points">${l.points.map(p=>`<li>${p}</li>`).join("")}</ul></section>
+    <section><h3>등장하는 위젯 · 흐름</h3><div class="widgets">${ws}</div></section>
+    <section class="quiz"><h3 style="margin:0">확인 퀴즈</h3><p>${esc(l.q.t)}</p><div class="opts">${opts}</div><p class="fb" id="fb"></p></section>
+    <div class="ctrl">
+      <button class="btn ${done?"done":"primary"}" id="bDone">${done?"✓ 수강 완료":"수강 완료로 표시"}</button>
+      <div class="nav2"><button class="btn" id="bPrev" ${cur===0?"disabled":""}>← 이전</button><button class="btn" id="bNext" ${cur===L.length-1?"disabled":""}>다음 →</button></div>
+    </div>
+  </div>`;
+  const box=document.getElementById("lesson"), fb=document.getElementById("fb");
+  const show=(k)=>{box.querySelectorAll(".opt").forEach(b=>{const i=+b.dataset.k;b.disabled=true;if(i===l.q.a)b.classList.add("right");else if(i===k)b.classList.add("wrong");});
+    if(k===l.q.a){fb.className="fb ok";fb.textContent="정답! "+l.q.e;}else{fb.className="fb no";fb.textContent="아쉬워요. "+l.q.e;}};
+  if(qa) show(l.q.a);
+  box.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{const k=+b.dataset.k;show(k);if(k===l.q.a){st.quiz[l.id]=1;save();renderNav();}else{setTimeout(()=>{box.querySelectorAll(".opt").forEach(x=>{x.disabled=false;x.classList.remove("right","wrong")});},1600);}});
+  document.getElementById("bDone").onclick=()=>{st.done[l.id]=!st.done[l.id];save();renderNav();renderLesson();};
+  document.getElementById("bPrev").onclick=()=>go(cur-1,true);
+  document.getElementById("bNext").onclick=()=>{ if(!st.done[l.id]){st.done[l.id]=true;save();} go(cur+1,true);};
+}
+function go(i,push){cur=Math.max(0,Math.min(L.length-1,i));if(push){try{history.replaceState(null,"","#lesson-"+(cur+1))}catch(e){location.hash="lesson-"+(cur+1)}}
+  renderNav();renderLesson();if(push&&window.innerWidth<860)document.getElementById("lesson").scrollIntoView({behavior:"smooth"});}
+function fromHash(){const m=/^#lesson-(\d+)$/.exec(location.hash);go(m?+m[1]-1:0,false);}
+window.addEventListener("hashchange",fromHash);
+fromHash();
+</script>
+
+</body>
+</html>
